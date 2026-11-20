@@ -747,27 +747,33 @@ function getGeneClass(g) {
     return 'gene-unknown';
 }
 
+// ЕДИНАЯ функция — всегда возвращает гены в горизонтальном ряду
 function renderGeneCircles(str, unknownIndices = []) {
-    return str.split('').map((g, i) =>
-        unknownIndices.includes(i)
-            ? `<span class="gene-circle gene-unknown">?</span>`
-            : `<span class="gene-circle ${getGeneClass(g)}">${g}</span>`
-    ).join('');
+    return `<div style="display:flex; gap:4px; flex-wrap:wrap;">` +
+        str.split('').map((g, i) =>
+            unknownIndices.includes(i)
+                ? `<span class="gene-circle gene-unknown">?</span>`
+                : `<span class="gene-circle ${getGeneClass(g)}">${g}</span>`
+        ).join('') +
+        `</div>`;
 }
 
 function renderFarmPlants() {
-    const container = document.getElementById('plantsList');
-    if (!container) return;
-    if (!farmPlants.length) { container.innerHTML = '<div class="empty-state">Список пуст.</div>'; return; }
-    container.innerHTML = farmPlants.map((p, idx) =>
+    const plantsList = document.getElementById('plantsList');
+    if (!plantsList) return;
+    if (farmPlants.length === 0) {
+        plantsList.innerHTML = '<div class="empty-state">Добавьте ростки для скрещивания.</div>';
+        return;
+    }
+    plantsList.innerHTML = farmPlants.map((p, idx) =>
         `<div class="plant-row">
             <div class="plant-row-left">
-                <span style="color:var(--text-dim); width:20px;">#${idx+1}</span>
+                <span style="color:var(--text-muted); font-size:0.8rem; font-weight:700;">#${idx + 1}</span>
                 <div class="plant-row-genes">${renderGeneCircles(p)}</div>
             </div>
             <button class="icon-del-btn" data-del-idx="${idx}">✕</button>
         </div>`
-    ).join('');
+    ).join("");
 }
 
 function initFarm() {
@@ -789,7 +795,9 @@ function initFarm() {
 
     input.addEventListener('input', function() {
         this.value = this.value.toUpperCase().replace(/[^GYHWX]/g, '');
-        preview.innerHTML = this.value.split('').map(g => `<span class="gene-circle ${getGeneClass(g)}">${g}</span>`).join('');
+        preview.innerHTML = `<div style="display:flex; gap:4px;">` +
+            this.value.split('').map(g => `<span class="gene-circle ${getGeneClass(g)}">${g}</span>`).join('') +
+            `</div>`;
     });
 
     document.getElementById('addPlantBtn').addEventListener('click', () => {
@@ -815,6 +823,7 @@ function initFarm() {
 
     document.getElementById('calcFarmBtn').addEventListener('click', () => {
         if (farmPlants.length < 3) return showToast('Нужно минимум 3 ростка!');
+
         const scoreMap = currentTarget === 'yield'
             ? { Y: 3, G: 2, H: 1, W: -3, X: -3 }
             : { G: 3, Y: 2, H: 1, W: -3, X: -3 };
@@ -864,16 +873,18 @@ function initFarm() {
             });
         }
 
+        // Каждый донор — в отдельном горизонтальном ряду
         document.getElementById('farmResult').innerHTML = `
             <div class="result-box">
                 <div class="result-title">Итоговый росток:</div>
-                <div class="result-genes" style="margin-bottom:12px;">${renderGeneCircles(bestChildStr, bestUnknownIndices)}</div>
+                <div style="margin-bottom:12px;">${renderGeneCircles(bestChildStr, bestUnknownIndices)}</div>
                 <div class="result-title">Доноры:</div>
-                <div style="display:flex; flex-direction:column; gap:6px;">${bestDonors.map(d => renderGeneCircles(d)).join('')}</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${bestDonors.map(d => renderGeneCircles(d)).join('')}
+                </div>
             </div>`;
     });
 }
-
 /* 6. БИНДЫ */
 const RUST_BINDS = [
     { title: "Автобег", key: "Z", desc: "Персонаж автоматически бежит вперёд.", cmd: "bind z +forward;+sprint" },
