@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUSTCORE by brouw — Тактический портал Rust</title>
+    
+    <!-- SEO: основные теги -->
+    <meta name="description" content="RUSTCORE — бесплатный тактический портал для игры Rust. Калькулятор рейда, стройки, печей, переработчика, фермы генов. Досье кланов, бинды F1, таймер плавки.">
+    <meta name="keywords" content="rust, калькулятор rust, raid calculator, rustcore, рейд калькулятор, печи rust, переработчик rust, ферма гены rust, досье кланов, бинды f1, шкаф tc, налог tc, автоэконом, сера, мвк, metal refined, sulfur, rust calculator, rust tool, rust toolkit, rust survival, rust guide, rust wiki, rust tips, rust 2026, rust калькулятор, rust помощь, rust гайд, rust сервер, rust пвп, rust вайп, rust бинды, rust команды">
+    <meta name="author" content="brouw">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Russian">
+    
+    <!-- Open Graph (для красивых ссылок в Discord, VK, Telegram) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="RUSTCORE — Тактический портал для Rust">
+    <meta property="og:description" content="Калькулятор рейда, стройки, печей, фермы генов. Досье кланов и бинды F1. Всё бесплатно.">
+    <meta property="og:image" content="icons/autoturret.png">
+    <meta property="og:url" content="https://bybrouw.ru">
+    <meta property="og:site_name" content="RUSTCORE">
+    <meta property="og:locale" content="ru_RU">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RUSTCORE — Тактический портал для Rust">
+    <meta name="twitter:description" content="Калькулятор рейда, стройки, печей, фермы генов. Всё бесплатно.">
+    <meta name="twitter:image" content="icons/autoturret.png">
+    
+    <!-- Favicon (иконка вкладки браузера) -->
+    <link rel="icon" type="image/png" href="icons/autoturret.png">
+    <link rel="apple-touch-icon" href="icons/autoturret.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://github.io">
+    
+    <!-- Тема браузера -->
+    <meta name="theme-color" content="#cd412b">
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Микроразметка Schema.org -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "RUSTCORE",
+      "url": "https://bybrouw.ru",
+      "description": "Бесплатный тактический портал для игры Rust: калькулятор рейда, стройки, печей, фермы генов, досье кланов и бинды F1.",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "author": {
+        "@type": "Person",
+        "name": "brouw"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "RUB"
+      }
+    }
+    </script>
+</head>
+<body>
+<header class="topbar">
+    <div class="container topbar-inner">
+        <div class="brand" id="brandLogo">
+            <div>
+                <div class="brand-title">RUST<span class="accent">CORE</span></div>
+                <div class="brand-sub">SURVIVAL TOOLKIT • BY BROUW</div>
+            </div>
+        </div>
+        <nav class="nav-tabs">
+            <button class="nav-btn active" data-tab="raid">💥 Рейд</button>
+            <button class="nav-btn" data-tab="build">🏗 Стройка & TC</button>
+            <button class="nav-btn" data-tab="recycler">♻ Переработчик</button>
+            <button class="nav-btn" data-tab="clans">🎯 Досье кланов</button>
+            <button class="nav-btn" data-tab="farm">🌱 Ферма (Гены)</button>
+            <button class="nav-btn" data-tab="furnace">🔥 Печи</button>
+            <button class="nav-btn" data-tab="binds">⌨ Бинды F1</button>
+        </nav>
+    </div>
+</header>
+
+<main class="container main-content">
+    <!-- РЕЙД -->
+    <section class="tab-panel active" id="tab-raid">
+        <div class="section-header">
+            <div>
+                <h1>Калькулятор рейда</h1>
+                <p class="subtitle">Выбери цели — «Авто-эконом» подберёт минимальный расход серы.</p>
+            </div>
+            <button class="btn btn-ghost reset-tab-btn" data-tab="raid">↺ Сбросить всё</button>
+        </div>
+        <div class="card method-bar-card">
+            <div class="method-bar-header">
+                <span class="label-title">Способ рейда (Светофор выгоды)</span>
+                <div class="traffic-legend">
+                    <span class="legend-item"><span class="dot dot-green"></span> Выгодно</span>
+                    <span class="legend-item"><span class="dot dot-red"></span> Дорого / Нельзя</span>
+                </div>
+            </div>
+            <div class="raid-methods" id="raidMethodsContainer"></div>
+        </div>
+        <div class="split-layout">
+            <div>
+                <h3 class="mini-title">План и ресурсы</h3>
+                <div class="items-grid" id="raidTargetsGrid"></div>
+                <div class="divider"></div>
+                <h3 class="mini-title">План действий</h3>
+                <div id="raidPlanBlock" class="empty-state">Выбери цель слева.</div>
+            </div>
+            <div class="card sticky-panel">
+                <div class="summary-header">
+                    <h2>Итого нужно:</h2>
+                    <span class="tag-pill tag-olive">АВТО-ЭКОНОМ</span>
+                </div>
+                <div class="resources-grid" id="raidResourcesGrid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- СТРОЙКА -->
+    <section class="tab-panel" id="tab-build">
+        <div class="section-header">
+            <div>
+                <h1>Стройка и шкаф (TC)</h1>
+                <p class="subtitle">Стоимость базы и суточное содержание (прогрессивный налог).</p>
+            </div>
+            <button class="btn btn-ghost reset-tab-btn" data-tab="build">↺ Сбросить всё</button>
+        </div>
+        <div class="split-layout">
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div>
+                    <h3 class="mini-title">Строительные блоки</h3>
+                    <div class="items-grid" id="buildItemsGrid"></div>
+                </div>
+                <div>
+                    <h3 class="mini-title">Двери, люки и заборы</h3>
+                    <div class="items-grid" id="buildDoorsGrid"></div>
+                </div>
+            </div>
+            <div class="card sticky-panel">
+                <div class="summary-header">
+                    <h2>Смета</h2>
+                    <span class="tag-pill tag-olive" id="upkeepTaxBadge">Налог: 10%</span>
+                </div>
+                <div class="tax-info-box">
+                    <div class="tax-row"><span>Блоков:</span><strong id="totalBlocksCount">0</strong></div>
+                    <div class="tax-tiers" id="taxTiersBar">
+                        <span data-tier="10" class="active">≤15: 10%</span>
+                        <span data-tier="15">≤50: 15%</span>
+                        <span data-tier="20">≤125: 20%</span>
+                        <span data-tier="33.3">126+: 33.3%</span>
+                    </div>
+                </div>
+                <h3 class="mini-title">Постройка:</h3>
+                <div class="resources-grid" id="buildCostGrid"></div>
+                <div class="divider"></div>
+                <h3 class="mini-title">Содержание (24ч):</h3>
+                <div class="resources-grid" id="upkeepCostGrid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ПЕРЕРАБОТЧИК -->
+    <section class="tab-panel" id="tab-recycler">
+        <div class="section-header">
+            <div>
+                <h1>Переработчик</h1>
+                <p class="subtitle">Выход ресурсов при переработке компонентов и предметов.</p>
+            </div>
+            <button class="btn btn-ghost reset-tab-btn" data-tab="recycler">↺ Сбросить всё</button>
+        </div>
+        <div class="split-layout">
+            <div>
+                <div id="recyclerItemsGrid" class="items-grid"></div>
+            </div>
+            <div class="card sticky-panel">
+                <div class="summary-header">
+                    <h2>Выход</h2>
+                    <span class="tag-pill tag-olive" id="recEfficiencyTag">100% (РТ)</span>
+                </div>
+                <div class="resources-grid" id="recyclerOutputGrid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- КЛАНЫ -->
+    <section class="tab-panel" id="tab-clans">
+        <div class="section-header">
+            <div>
+                <h1>Досье кланов</h1>
+                <p class="subtitle">Заметки по врагам, читерам и союзникам на сервере (сохраняются в браузере).</p>
+            </div>
+            <button class="btn btn-ghost reset-tab-btn" data-tab="clans">↺ Сбросить всё</button>
+        </div>
+        <div class="card add-clan-form">
+            <form id="addClanForm" class="form-row">
+                <div class="input-group">
+                    <label>Клан / Ник / Квадрат</label>
+                    <input type="text" id="clanNameInput" required>
+                </div>
+                <div class="input-group">
+                    <label>Статус</label>
+                    <select id="clanStatusInput">
+                        <option value="enemy">🔴 Враги</option>
+                        <option value="cheater">🟣 Софт</option>
+                        <option value="ally">🟢 Союзники</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Заметка (двери, онлайн, SteamID)</label>
+                    <input type="text" id="clanNoteInput">
+                </div>
+                <button type="submit" class="btn btn-primary">+ Добавить</button>
+            </form>
+        </div>
+        <div id="clansContainer"></div>
+    </section>
+
+    <!-- ФЕРМА -->
+    <section class="tab-panel" id="tab-farm">
+        <div class="section-header">
+            <div>
+                <h1>Ферма (Гены)</h1>
+                <p class="subtitle">Точный расчёт перекрёстного опыления ростков на грядке.</p>
+            </div>
+            <button class="btn btn-ghost reset-tab-btn" data-tab="farm">↺ Сбросить всё</button>
+        </div>
+        <div class="split-layout">
+            <div>
+                <div class="card" style="margin-bottom:16px;">
+                    <h3 class="mini-title">Мои ростки</h3>
+                    <div style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
+                        <div class="input-group" style="flex:1; min-width:200px;">
+                            <label>Введи 6 генов (G/Y/H/W/X)</label>
+                            <input type="text" id="plantInput" maxlength="6" placeholder="GYGWXH">
+                        </div>
+                        <div id="plantPreview" style="display:flex; gap:4px; padding:8px 0;"></div>
+                        <button class="btn btn-primary" id="addPlantBtn">+ Добавить</button>
+                        <button class="btn btn-ghost" id="loadTestPlantsBtn">Загрузить тестовые</button>
+                    </div>
+                </div>
+                <div id="plantsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <div class="card sticky-panel">
+                <h3 class="mini-title">Результат</h3>
+                <div class="target-toggle-group" id="farmTargetGroup" style="margin-bottom:14px;">
+                    <button class="target-toggle-btn active" data-target="yield">🌾 Урожай (Y / G)</button>
+                    <button class="target-toggle-btn" data-target="speed">⚡ Скорость (G / Y)</button>
+                </div>
+                <button class="btn btn-olive" id="calcFarmBtn" style="width:100%; margin-bottom:14px;">🧬 Рассчитать идеал</button>
+                <div id="farmResult" class="empty-state">Добавьте 3+ ростка.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ПЕЧИ -->
+    <section class="tab-panel" id="tab-furnace">
+        <div class="section-header">
+            <div>
+                <h1>Печи (Плавка)</h1>
+                <p class="subtitle">Расчёт времени плавки, расхода дерева и таймер со звуковым сигналом.</p>
+            </div>
+            <button class="btn btn-ghost" id="furnace-reset-btn">↺ Сбросить всё</button>
+        </div>
+        <div class="split-layout">
+            <div>
+                <div class="furnace-picker">
+                    <div class="card furnace-card" data-type="small">
+                        <img src="icons/furnace.png" class="furnace-icon" alt="Малая печь">
+                        <div class="furnace-name">Малая печь</div>
+                        <div class="furnace-sub">36 серы / мин</div>
+                    </div>
+                    <div class="card furnace-card" data-type="large">
+                        <img src="icons/furnace.large.png" class="furnace-icon" alt="Большая печь">
+                        <div class="furnace-name">Большая печь</div>
+                        <div class="furnace-sub">180 серы / мин</div>
+                    </div>
+                    <div class="card furnace-card" data-type="electric">
+                        <img src="icons/electric.furnace.png" class="furnace-icon" alt="Электрическая печь">
+                        <div class="furnace-name">Электрическая</div>
+                        <div class="furnace-sub">Без дерева</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom:16px;">
+                    <h3 class="mini-title">Количество печей</h3>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="cnt-btn" id="furnace-count-dec">−</button>
+                        <input type="number" id="furnace-count-input" class="cnt-input" value="1" min="1" max="999" style="width:60px; text-align:center;">
+                        <button class="cnt-btn" id="furnace-count-inc">+</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="mini-title">Руда на плавку</h3>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="ore-row">
+                            <span class="ore-label"><img src="icons/sulfur.ore.png" class="ore-icon" alt="">Сера</span>
+                            <div class="counter-controls">
+                                <button class="cnt-btn furnace-ore-dec" data-ore="sulfur">−</button>
+                                <input type="number" class="cnt-input furnace-ore-input" data-ore="sulfur" value="0" min="0">
+                                <button class="cnt-btn furnace-ore-inc" data-ore="sulfur">+</button>
+                            </div>
+                        </div>
+                        <div class="ore-row">
+                            <span class="ore-label"><img src="icons/metal.ore.png" class="ore-icon" alt="">Металл</span>
+                            <div class="counter-controls">
+                                <button class="cnt-btn furnace-ore-dec" data-ore="metal">−</button>
+                                <input type="number" class="cnt-input furnace-ore-input" data-ore="metal" value="0" min="0">
+                                <button class="cnt-btn furnace-ore-inc" data-ore="metal">+</button>
+                            </div>
+                        </div>
+                        <div class="ore-row">
+                            <span class="ore-label"><img src="icons/hq.metal.ore.png" class="ore-icon" alt="">МВК</span>
+                            <div class="counter-controls">
+                                <button class="cnt-btn furnace-ore-dec" data-ore="hqm">−</button>
+                                <input type="number" class="cnt-input furnace-ore-input" data-ore="hqm" value="0" min="0">
+                                <button class="cnt-btn furnace-ore-inc" data-ore="hqm">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card sticky-panel">
+                <div class="summary-header">
+                    <h2>Таймер</h2>
+                    <span class="tag-pill tag-olive" id="furnace-time-display">00:00:00</span>
+                </div>
+                <h3 class="mini-title">Расход дерева:</h3>
+                <div class="resources-grid" id="furnace-consume-grid"></div>
+                <div class="divider"></div>
+                <h3 class="mini-title">Выход:</h3>
+                <div class="resources-grid" id="furnace-output-grid"></div>
+                <div class="divider"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="furnace-start-btn" style="flex:1;">▶ Старт</button>
+                    <button class="btn btn-ghost" id="furnace-pause-btn" disabled>⏸ Пауза</button>
+                    <button class="btn btn-ghost" id="furnace-sound-test">🔊 Тест</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- БИНДЫ -->
+    <section class="tab-panel" id="tab-binds">
+        <div class="section-header">
+            <div>
+                <h1>Бинды F1</h1>
+                <p class="subtitle">Готовые команды для консоли Rust. Копируй и вставляй.</p>
+            </div>
+        </div>
+        <div class="binds-grid" id="bindsContainer"></div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <span class="footer-text">ЛУЧШИЙ БЕСПЛАТНЫЙ САЙТ</span>
+    <div class="footer-github">
+        <a href="https://bybrouw.github.io" target="_blank" rel="noopener noreferrer">GitHub Pages</a>
+    </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<a href="https://www.donationalerts.com/r/brouw1" target="_blank" rel="noopener noreferrer" class="rust-donate-btn">
+    <div class="rust-donate-icon">₽</div>
+    <div class="rust-donate-text">
+        <div class="rust-donate-title">ПОДДЕРЖАТЬ</div>
+        <div class="rust-donate-sub">ДОНАТ • BY BROUW</div>
+    </div>
+</a>
+
+<script src="app.js"></script>
+<script src="furnaces.js"></script>
+</body>
+</html>
