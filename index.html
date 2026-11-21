@@ -43,12 +43,25 @@
                                 <span class="legend-item"><span class="dot dot-red"></span> Дорого / Нельзя</span>
                             </div>
                         </div>
+                        <!-- НОВАЯ ЛОГИКА: Переключатель "Только быстрый рейд" -->
+                        <label class="fast-raid-toggle">
+                            <input type="checkbox" id="fastRaidToggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Только быстрый рейд (скрыть непрактичные методы для стен)</span>
+                        </label>
                         <div class="raid-methods" id="raidMethodsContainer"></div>
                     </div>
                     <div class="items-grid" id="raidTargetsGrid"></div>
                 </div>
                 <div class="card sticky-panel">
                     <div class="summary-header"><h2>План и ресурсы</h2></div>
+                    
+                    <!-- НОВАЯ ЛОГИКА: Блок оптимального комбо -->
+                    <div id="optimalComboBlock" class="optimal-combo-card" style="display: none;">
+                        <h3 class="mini-title" style="color: var(--rust-olive); margin-bottom: 8px;">💡 Оптимальное комбо (дешевле по сере)</h3>
+                        <div id="optimalComboContent"></div>
+                    </div>
+
                     <h3 class="mini-title">План действий</h3>
                     <div id="raidPlanBlock" class="empty-state">Выбери цель слева.</div>
                     <div class="divider"></div>
@@ -203,7 +216,6 @@
         </div>
     </footer>
 
-    <!-- Кнопка доната вынесена из футера, чтобы клики гарантированно работали -->
     <a href="https://www.donationalerts.com/r/brouw1" class="rust-donate-btn" target="_blank" rel="noopener noreferrer">
         <div class="rust-donate-icon">₽</div>
         <div class="rust-donate-text">

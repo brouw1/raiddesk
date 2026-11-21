@@ -533,3 +533,79 @@ border-bottom-color: var(--rust-orange);
   letter-spacing: 0.5px;
   text-transform: lowercase;
 }
+/* НОВАЯ ЛОГИКА: Стили для переключателя "Только быстрый рейд" */
+.fast-raid-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    user-select: none;
+    margin-bottom: 14px;
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius);
+    width: fit-content;
+}
+.fast-raid-toggle input { display: none; }
+.toggle-slider {
+    width: 38px;
+    height: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    position: relative;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: var(--transition);
+}
+.fast-raid-toggle input:checked + .toggle-slider {
+    background: var(--rust-olive-soft);
+    border-color: var(--rust-olive);
+}
+.fast-raid-toggle input:checked + .toggle-slider::after {
+    transform: translateX(18px);
+    background: var(--rust-olive);
+}
+.toggle-text { font-weight: 600; }
+
+/* НОВАЯ ЛОГИКА: Стили для блока оптимального комбо */
+.optimal-combo-card {
+    background: rgba(115, 141, 69, 0.08);
+    border: 1px solid var(--rust-olive);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.combo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(115, 141, 69, 0.3);
+    font-size: 0.88rem;
+}
+.combo-row:last-child { border-bottom: none; padding-bottom: 0; }
+.combo-row.combo-total { 
+    border-top: 1px solid var(--rust-olive); 
+    margin-top: 8px; 
+    padding-top: 10px; 
+    font-weight: 800;
+}
+.combo-target { font-weight: 700; color: var(--text-main); }
+.combo-method { color: var(--rust-orange); font-weight: 600; text-align: right; }
+.combo-sulfur { color: #ffd700; font-weight: 800; text-align: right; min-width: 80px; }

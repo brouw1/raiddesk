@@ -68,11 +68,36 @@ const RAID_TARGETS = [
 { id: "sam_site", name: "ПВО / SAM Site", hp: 1000, icon: "samsite.png", eco: { hv: 3 }, methods: { c4: 2, rocket: 4, hv: 3, satchel: 4, exp556: 200, f1_grenade: 10, molotov: null, fire_rocket: 1 } },
 { id: "vending", name: "Торг. автомат", hp: 1250, icon: "vending.machine.png", eco: { c4: 5 }, methods: { c4: 5, rocket: 10, satchel: 29, exp556: 499, hv: 67, molotov: null, fire_rocket: null } }
 ];
-const raidState = { selectedMethod: "eco", counts: {} };
+
+// НОВАЯ ЛОГИКА: Данные для фильтрации и оптимальных комбо
+const WALL_TARGETS = new Set(["stone_wall", "metal_wall", "hqm_wall", "high_stone_wall", "high_stone_gate"]);
+const IMPRACTICAL_METHODS = new Set(["exp556", "f1_grenade", "beancan"]);
+
+const OPTIMAL_COMBOS = {
+    sheet_door: { name: "Железная дверь", c4: 0, rockets: 1, exp556: 8, sulfur: 1600 },
+    garage_door: { name: "Гаражная дверь", c4: 0, rockets: 2, exp556: 40, sulfur: 3800 },
+    hqm_door: { name: "МВК дверь", c4: 2, rockets: 0, exp556: 18, sulfur: 4850 },
+    stone_wall: { name: "Каменная стена", c4: 1, rockets: 2, exp556: 0, sulfur: 5000 },
+    metal_wall: { name: "Металлическая стена", c4: 3, rockets: 2, exp556: 0, sulfur: 9400 },
+    hqm_wall: { name: "МВК стена", c4: 7, rockets: 2, exp556: 0, sulfur: 18200 }
+};
+
+const raidState = { selectedMethod: "eco", counts: {}, fastRaidOnly: true }; // НОВАЯ ЛОГИКА: fastRaidOnly по умолчанию true
+
 function initRaidCalculator() {
 const methodsContainer = document.getElementById("raidMethodsContainer");
 const targetsGrid = document.getElementById("raidTargetsGrid");
 if (!methodsContainer || !targetsGrid) return;
+
+// НОВАЯ ЛОГИКА: Обработчик переключателя "Только быстрый рейд"
+const fastRaidToggle = document.getElementById("fastRaidToggle");
+if (fastRaidToggle) {
+    fastRaidToggle.addEventListener("change", () => {
+        raidState.fastRaidOnly = fastRaidToggle.checked;
+        updateRaidCalculation();
+    });
+}
+
 const methodKeys = ["eco"].concat(Object.keys(RAID_WEAPONS));
 methodsContainer.innerHTML = methodKeys.map(key => {
     if (key === "eco") return `<button type="button" class="method-btn active" data-method="eco"><div class="item-icon-wrap sm">⚡</div><div class="method-info"><span class="method-name">АВТО-ЭКОНОМ</span><span class="method-sulfur" id="sulfur-eco">Оптимально</span></div></button>`;
@@ -128,19 +153,27 @@ const activeTargets = RAID_TARGETS.filter(t => (raidState.counts[t.id] || 0) > 0
 const methodKeys = Object.keys(RAID_WEAPONS);
 const methodTotals = {};
 let minValidSulfur = Infinity;
+
 methodKeys.forEach(mKey => {
     let possible = true, totalSulfur = 0;
     activeTargets.forEach(t => {
-        const qty = raidState.counts[t.id], req = t.methods[mKey];
+        const qty = raidState.counts[t.id];
+        let req = t.methods[mKey];
+        
+        // НОВАЯ ЛОГИКА: Если включен "Только быстрый рейд" и это стена, игнорируем непрактичные методы
+        if (raidState.fastRaidOnly && WALL_TARGETS.has(t.id) && IMPRACTICAL_METHODS.has(mKey)) {
+            req = null;
+        }
+
         if (req === null || req === undefined) possible = false;
         else totalSulfur += req * qty * RAID_WEAPONS[mKey].cost.sulfur;
     });
     methodTotals[mKey] = { possible, totalSulfur };
-    // Убрали исключение для exp556, чтобы патроны тоже могли считаться эталоном минимума, если они выгодны
     if (possible && activeTargets.length > 0 && totalSulfur < minValidSulfur) {
         minValidSulfur = totalSulfur;
     }
 });
+
 let ecoSulfurTotal = 0;
 activeTargets.forEach(t => {
     const qty = raidState.counts[t.id];
@@ -163,10 +196,66 @@ methodKeys.forEach(mKey => {
     if (!info.possible) { sub.textContent = "Невозможно"; btn.classList.add("status-red"); }
     else {
         sub.textContent = fmt(info.totalSulfur) + " серы";
-        // Убрали условие mKey !== "exp556", теперь патроны тоже получают зелёную/красную подсветку
         btn.classList.add(info.totalSulfur <= minValidSulfur * 1.15 ? "status-green" : "status-red");
     }
 });
+
+// НОВАЯ ЛОГИКА: Расчёт оптимальных комбо
+let comboTotals = { c4: 0, rockets: 0, exp556: 0, sulfur: 0, hasCombos: false };
+let comboDetails = [];
+
+activeTargets.forEach(t => {
+    const qty = raidState.counts[t.id];
+    if (OPTIMAL_COMBOS[t.id]) {
+        const combo = OPTIMAL_COMBOS[t.id];
+        comboTotals.c4 += combo.c4 * qty;
+        comboTotals.rockets += combo.rockets * qty;
+        comboTotals.exp556 += combo.exp556 * qty;
+        comboTotals.sulfur += combo.sulfur * qty;
+        comboTotals.hasCombos = true;
+        
+        let methodStr = [];
+        if (combo.c4 > 0) methodStr.push(`${combo.c4} C4`);
+        if (combo.rockets > 0) methodStr.push(`${combo.rockets} Ракет`);
+        if (combo.exp556 > 0) methodStr.push(`${combo.exp556} Разрывных`);
+        
+        comboDetails.push({
+            name: t.name,
+            qty: qty,
+            method: methodStr.join(" + ")
+        });
+    }
+});
+
+const comboBlock = document.getElementById("optimalComboBlock");
+const comboContent = document.getElementById("optimalComboContent");
+if (comboTotals.hasCombos) {
+    comboBlock.style.display = "block";
+    let html = comboDetails.map(d =>
+        `<div class="combo-row">
+            <span class="combo-target">${d.qty} × ${d.name}</span>
+            <span class="combo-method">${d.method}</span>
+        </div>`
+    ).join("");
+
+    // Если выбрано несколько объектов с комбо, показываем итоговую строку
+    const comboTargetsCount = activeTargets.filter(t => OPTIMAL_COMBOS[t.id]).reduce((sum, t) => sum + raidState.counts[t.id], 0);
+    if (comboTargetsCount > 1) {
+        html += `<div class="combo-row combo-total">
+            <span class="combo-target" style="color: var(--rust-olive);">ИТОГО:</span>
+            <span class="combo-method">
+                ${comboTotals.c4 > 0 ? comboTotals.c4 + ' C4 ' : ''}
+                ${comboTotals.rockets > 0 ? comboTotals.rockets + ' Ракет ' : ''}
+                ${comboTotals.exp556 > 0 ? comboTotals.exp556 + ' Разрывных' : ''}
+            </span>
+            <span class="combo-sulfur">${fmt(comboTotals.sulfur)} серы</span>
+        </div>`;
+    }
+    comboContent.innerHTML = html;
+} else {
+    comboBlock.style.display = "none";
+}
+
 const planBlock = document.getElementById("raidPlanBlock"),
       totalRes = { sulfur: 0, gp: 0, charcoal: 0, metal: 0, lgf: 0, pipes: 0 };
 if (activeTargets.length === 0) {
@@ -187,8 +276,15 @@ if (activeTargets.length === 0) {
             });
             return `<div class="plan-row"><span class="plan-row-target">${qty} × ${t.name}</span><span class="plan-row-action">${steps.join(" + ")}</span></div>`;
         }
-        const mKey = raidState.selectedMethod, req = t.methods[mKey];
-        if (req === null || req === undefined) return `<div class="plan-row impossible"><span class="plan-row-target">${qty} × ${t.name}</span><span class="plan-row-action">❌ Нельзя</span></div>`;
+        const mKey = raidState.selectedMethod;
+        let req = t.methods[mKey];
+        
+        // НОВАЯ ЛОГИКА: Применяем тот же фильтр к плану действий
+        if (raidState.fastRaidOnly && WALL_TARGETS.has(t.id) && IMPRACTICAL_METHODS.has(mKey)) {
+            req = null;
+        }
+
+        if (req === null || req === undefined) return `<div class="plan-row impossible"><span class="plan-row-target">${qty} × ${t.name}</span><span class="plan-row-action">❌ Нельзя / Не рекомендуется</span></div>`;
         const totalW = req * qty, c = RAID_WEAPONS[mKey].cost;
         totalRes.sulfur += c.sulfur * totalW;
         totalRes.gp += c.gp * totalW;
@@ -214,7 +310,9 @@ document.getElementById("raidResourcesGrid").innerHTML = resConfig.map(r =>
     </div>`
 ).join("");
 }
+
 /* 2. СТРОЙКА & TC */
+// ... (остальной код стройки, кланов, фермы, биндов без изменений для экономии места, он полностью рабочий из предыдущей версии) ...
 const BUILD_BLOCKS = [
 { id: "square_found", name: "Квадратный фундамент", icon: "wood.png", costs: { wood: { main: 200, twig: 50 }, stone: { main: 300, twig: 50 }, metal: { main: 200, twig: 50 }, hqm: { main: 25, twig: 50 } } },
 { id: "tri_found", name: "Треугольный фундамент", icon: "wood.png", costs: { wood: { main: 100, twig: 25 }, stone: { main: 150, twig: 25 }, metal: { main: 100, twig: 25 }, hqm: { main: 13, twig: 25 } } },
@@ -469,7 +567,8 @@ if (upkeepGridEl) upkeepGridEl.innerHTML = upkeepMeta.map(r => {
     return `<div class="res-item ${val > 0 ? "highlight" : ""}">${renderIcon(r.icon, r.name, "sm")}<div class="res-data"><span class="res-val">${fmt(val)}</span><span class="res-name">${r.name}</span></div></div>`;
 }).join("");
 }
-/* 3. ПЕРЕРАБОТЧИК (Power Trip + АВТО-ОКРУГЛЕНИЕ) */
+
+/* 3. ПЕРЕРАБОТЧИК */
 const RECYCLER_MODES = {
     yellow:      { label: "Жёлтый (Сейф-зона)", eff: "40%", mult: 0.8 },
     green:       { label: "Зелёный (Обычный РТ)", eff: "50%", mult: 1.0 },
@@ -593,7 +692,6 @@ RECYCLER_ITEMS.forEach(item => {
 const qty = recyclerState[item.id] || 0;
 if (qty <= 0) return;
 Object.keys(item.yield).forEach(res => {
-    // АВТОМАТИЧЕСКОЕ ОКРУГЛЕНИЕ до целого числа (как в игре)
     let amount = item.yield[res] * qty * mult;
     totals[res] += Math.round(amount);
 });
@@ -629,6 +727,7 @@ if (activeOutputs.length === 0) {
     ).join("");
 }
 }
+
 /* 4. КЛАНЫ */
 const CLANS_STORAGE_KEY = "raiddesk_clans_v1";
 let clansData = [];
@@ -661,6 +760,7 @@ container.innerHTML = clansData.map(c =>
 `<div class="clan-card status-${c.status}" style="border-top: 3px solid ${c.status==='ally'?'#738d45':c.status==='cheater'?'#8e44ad':'#c93b3b'}; padding:16px; background:var(--bg-panel); border-radius:4px; border-left:1px solid var(--border-dark); border-right:1px solid var(--border-dark); border-bottom:1px solid var(--border-dark); margin-bottom:16px;"> <div style="display:flex; justify-content:space-between; align-items:flex-start;"> <div> <div style="font-size:1.08rem; font-weight:800;">${escapeHtml(c.name)}</div> <div style="font-size:0.84rem; color:var(--text-muted);">${escapeHtml(c.note)}</div> </div> <div style="display:flex; gap:8px; align-items:center;"> <span style="font-size:0.72rem; font-weight:800; padding:3px 8px; border-radius:3px; background:var(--bg-card);">${labels[c.status]}</span> <button class="icon-del-btn" data-del-clan="${c.id}">✕</button> </div> </div> </div>`
 ).join("");
 }
+
 /* 5. ФЕРМА */
 const FARM_STORAGE_KEY = "raiddesk_farm_v1";
 let farmPlants = [], currentTarget = "yield";
@@ -786,6 +886,7 @@ document.getElementById('calcFarmBtn').addEventListener('click', () => {
         </div>`;
 });
 }
+
 /* 6. БИНДЫ */
 const RUST_BINDS = [
 { title: "Автобег", key: "Z", desc: "Персонаж автоматически бежит вперёд.", cmd: "bind z +forward;+sprint" },
@@ -845,6 +946,7 @@ document.body.addEventListener("click", async function(e) {
     }
 });
 }
+
 /* 7. СБРОС ВКЛАДОК */
 function initResetButtons() {
 document.querySelectorAll('.reset-tab-btn').forEach(btn => {
@@ -853,6 +955,9 @@ const tab = btn.dataset.tab;
 if (tab === 'raid') {
 raidState.counts = {};
 raidState.selectedMethod = "eco";
+raidState.fastRaidOnly = true; // НОВАЯ ЛОГИКА: сброс тумблера
+const toggle = document.getElementById("fastRaidToggle");
+if (toggle) toggle.checked = true;
 document.querySelectorAll(".method-btn").forEach(b => b.classList.toggle("active", b.dataset.method === "eco"));
 syncRaidInputs(); updateRaidCalculation();
 } else if (tab === 'build') {
@@ -890,11 +995,12 @@ showToast('Сброшено');
 });
 });
 }
+
 /* ========== АВТОСОХРАНЕНИЕ ========== */
 const SAVE_KEY = "raiddesk_save_v1";
 function saveState() {
 const state = {
-raid: { counts: raidState.counts, method: raidState.selectedMethod },
+raid: { counts: raidState.counts, method: raidState.selectedMethod, fastRaidOnly: raidState.fastRaidOnly }, // НОВАЯ ЛОГИКА
 build: { blocks: buildState, doors: doorState, materials: blockMaterials },
 recycler: { counts: recyclerState, deep: recyclerDeepProcess, mode: recyclerMode }
 };
@@ -908,6 +1014,7 @@ const state = JSON.parse(raw);
     if (state.raid) {
         raidState.counts = state.raid.counts || {};
         raidState.selectedMethod = state.raid.method || "eco";
+        raidState.fastRaidOnly = state.raid.fastRaidOnly !== undefined ? state.raid.fastRaidOnly : true; // НОВАЯ ЛОГИКА
     }
     if (state.build) {
         Object.assign(buildState, state.build.blocks || {});
@@ -930,6 +1037,10 @@ syncRaidInputs();
 document.querySelectorAll(".method-btn").forEach(b => {
 b.classList.toggle("active", b.dataset.method === raidState.selectedMethod);
 });
+// НОВАЯ ЛОГИКА: восстановление состояния тумблера
+const toggle = document.getElementById("fastRaidToggle");
+if (toggle) toggle.checked = raidState.fastRaidOnly;
+
 BUILD_BLOCKS.forEach(b => {
     const mat = blockMaterials[b.id];
     document.querySelectorAll(`#mat-sel-${b.id} .mat-btn`).forEach(el => {
@@ -949,6 +1060,7 @@ const tag = document.getElementById("recEfficiencyTag");
 if (tag) tag.textContent = RECYCLER_MODES[recyclerMode].eff;
 syncRecyclerInputs();
 }
+
 /* ЗАПУСК */
 document.addEventListener("DOMContentLoaded", () => {
 initNavigation();
