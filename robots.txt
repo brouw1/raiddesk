@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://brouw1.github.io/raiddesk/sitemap.xml
