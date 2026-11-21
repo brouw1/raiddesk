@@ -517,3 +517,19 @@ border-bottom: 1px dashed var(--text-dim);
 color: var(--rust-orange);
 border-bottom-color: var(--rust-orange);
 }
+#brandLogo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+#brandLogo::after {
+  content: "by brouw1";
+  font-size: 0.75rem;
+  color: #738d45; /* Зелёный цвет (rust-olive) */
+  font-weight: 600;
+  margin-left: 8px;
+  opacity: 1; /* Полная видимость */
+  letter-spacing: 0.5px;
+  text-transform: lowercase;
+}
