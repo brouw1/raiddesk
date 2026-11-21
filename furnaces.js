@@ -10,12 +10,13 @@ let timerInterval = null;
 let timeRemaining = 0;
 let isPaused = false;
 let totalTime = 0;
+
 const timeDisplay = document.getElementById('furnace-time-display');
 const consumeGrid = document.getElementById('furnace-consume-grid');
 const outputGrid = document.getElementById('furnace-output-grid');
 const startBtn = document.getElementById('furnace-start-btn');
 const pauseBtn = document.getElementById('furnace-pause-btn');
-const resetBtn = document.getElementById('furnace-reset-all');
+const resetBtn = document.getElementById('furnace-reset-all') || document.getElementById('furnace-reset-btn');
 const soundTestBtn = document.getElementById('furnace-sound-test');
 const countInput = document.getElementById('furnace-count-input');
 const oreInputs = {
@@ -23,10 +24,12 @@ const oreInputs = {
     metal: document.querySelector('.furnace-ore-input[data-ore="metal"]'),
     hqm: document.querySelector('.furnace-ore-input[data-ore="hqm"]')
 };
+
 function formatTime(secs) {
     const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
     return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
 }
+
 function playCompletionSound() {
     const audioPath = 'sounds/rust-fake-invite.mp3';
     const repeatCount = 5;
@@ -56,6 +59,7 @@ function playCompletionSound() {
     }
     tryPlayNext();
 }
+
 function playSystemBeep() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -75,6 +79,7 @@ function playSystemBeep() {
         console.log('Аудио API недоступно', e);
     }
 }
+
 function showScreenNotify(text) {
     const notify = document.createElement('div');
     notify.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #cd412b; color: #fff; padding: 16px 32px; border-radius: 4px; font-size: 1.2rem; font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 100000; pointer-events: none;';
@@ -82,6 +87,7 @@ function showScreenNotify(text) {
     document.body.appendChild(notify);
     setTimeout(() => notify.remove(), 5000);
 }
+
 function calculate() {
     const woodRate = FURNACES[currentFurnace].woodRate;
     const rates = FURNACES[currentFurnace].rates;
@@ -117,6 +123,7 @@ function calculate() {
         </div>
       `;
 }
+
 function startTimer() {
     if (totalTime <= 0) { showScreenNotify('❌ Нет руды!'); return; }
     if (timerInterval) clearInterval(timerInterval);
@@ -145,50 +152,60 @@ function startTimer() {
         }
     }, 1000);
 }
+
 function togglePause() {
     isPaused = !isPaused;
     pauseBtn.textContent = isPaused ? '▶ Продолжить' : '⏸ Пауза';
 }
+
+/* ===== ГЛАВНЫЙ ФИКС: подсветка через класс .selected, а не инлайн-стили ===== */
+function selectFurnace(type) {
+    document.querySelectorAll('.furnace-card').forEach(c =>
+        c.classList.toggle('selected', c.dataset.type === type)
+    );
+    currentFurnace = type;
+    calculate();
+}
+
 document.querySelectorAll('.furnace-card').forEach(card => {
-    card.addEventListener('click', () => {
-        document.querySelectorAll('.furnace-card').forEach(c => { 
-            c.style.borderColor = 'var(--border-dark)'; 
-            c.style.background = 'var(--bg-panel)'; 
-        });
-        card.style.borderColor = 'var(--rust-orange)'; 
-        card.style.background = 'rgba(205,65,43,0.08)';
-        currentFurnace = card.dataset.type; 
-        calculate();
-    });
+    card.addEventListener('click', () => selectFurnace(card.dataset.type));
 });
-document.getElementById('furnace-count-dec').addEventListener('click', () => { 
-    countInput.value = Math.max(1, (parseInt(countInput.value) || 1) - 1); 
-    furnaceCount = parseInt(countInput.value); 
-    calculate(); 
+
+document.getElementById('furnace-count-dec').addEventListener('click', () => {
+    countInput.value = Math.max(1, (parseInt(countInput.value) || 1) - 1);
+    furnaceCount = parseInt(countInput.value);
+    calculate();
 });
-document.getElementById('furnace-count-inc').addEventListener('click', () => { 
-    countInput.value = (parseInt(countInput.value) || 1) + 1; 
-    furnaceCount = parseInt(countInput.value); 
-    calculate(); 
+document.getElementById('furnace-count-inc').addEventListener('click', () => {
+    countInput.value = (parseInt(countInput.value) || 1) + 1;
+    furnaceCount = parseInt(countInput.value);
+    calculate();
 });
-countInput.addEventListener('input', () => { 
-    furnaceCount = Math.max(1, parseInt(countInput.value) || 1); 
-    calculate(); 
+countInput.addEventListener('input', () => {
+    furnaceCount = Math.max(1, parseInt(countInput.value) || 1);
+    // Если ввели 0 или пустоту — возвращаем 1 в поле, чтобы не было как на скрине
+    if (parseInt(countInput.value, 10) < 1 || isNaN(parseInt(countInput.value, 10))) {
+        countInput.value = furnaceCount;
+    }
+    calculate();
 });
-document.querySelectorAll('.furnace-ore-inc').forEach(btn => btn.addEventListener('click', () => { 
-    const o = btn.dataset.ore; 
-    oreInputs[o].value = (parseInt(oreInputs[o].value) || 0) + 1; 
-    calculate(); 
+
+document.querySelectorAll('.furnace-ore-inc').forEach(btn => btn.addEventListener('click', () => {
+    const o = btn.dataset.ore;
+    oreInputs[o].value = (parseInt(oreInputs[o].value) || 0) + 1;
+    calculate();
 }));
-document.querySelectorAll('.furnace-ore-dec').forEach(btn => btn.addEventListener('click', () => { 
-    const o = btn.dataset.ore; 
-    oreInputs[o].value = Math.max(0, (parseInt(oreInputs[o].value) || 0) - 1); 
-    calculate(); 
+document.querySelectorAll('.furnace-ore-dec').forEach(btn => btn.addEventListener('click', () => {
+    const o = btn.dataset.ore;
+    oreInputs[o].value = Math.max(0, (parseInt(oreInputs[o].value) || 0) - 1);
+    calculate();
 }));
 Object.values(oreInputs).forEach(input => input.addEventListener('input', calculate));
+
 startBtn.addEventListener('click', startTimer);
 pauseBtn.addEventListener('click', togglePause);
 soundTestBtn.addEventListener('click', playCompletionSound);
+
 if (resetBtn) resetBtn.addEventListener('click', () => {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
@@ -202,18 +219,9 @@ if (resetBtn) resetBtn.addEventListener('click', () => {
     countInput.value = 1;
     furnaceCount = 1;
     Object.values(oreInputs).forEach(i => i.value = 0);
-    document.querySelectorAll('.furnace-card').forEach(c => { 
-        c.style.borderColor = 'var(--border-dark)'; 
-        c.style.background = 'var(--bg-panel)'; 
-    });
-    const sCard = document.querySelector('.furnace-card[data-type="small"]');
-    if (sCard) { 
-        sCard.style.borderColor = 'var(--rust-orange)'; 
-        sCard.style.background = 'rgba(205,65,43,0.08)'; 
-    }
-    currentFurnace = 'small';
-    calculate();
+    selectFurnace('small');
     showScreenNotify('↺ Вкладка сброшена');
 });
+
 calculate();
 });
